@@ -1,0 +1,20 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<p>Hello @ViewData["Name"].</p>
+
+<form method="post">
+    <fieldset>
+        <legend>Please enter your PIN to see your balance.</legend>
+        <div>
+            <label for="pin">PIN:</label>
+            <input type="password" name="pin" value="" maxlength="4" />
+            <input type="hidden" name="UserId" value=@ViewData["Name"] />
+        </div>
+        <div>
+            <label>&nbsp;</label>
+            <input type="submit" value="Submit" class="submit" />
+        </div>
+    </fieldset>
+</form>

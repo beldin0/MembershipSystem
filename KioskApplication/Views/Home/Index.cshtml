@@ -1,0 +1,19 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<p>@ViewData["Message"]</p>
+
+<form method="post">
+    <fieldset>
+        <legend>Welcome to the kiosk. Please enter your ID.</legend>
+        <div>
+            <label for="UserId">User ID:</label>
+            <input type="text" name="UserId" value="" />
+        </div>
+        <div>
+            <label>&nbsp;</label>
+            <input type="submit" value="Submit" class="submit" />
+        </div>
+    </fieldset>
+</form>
