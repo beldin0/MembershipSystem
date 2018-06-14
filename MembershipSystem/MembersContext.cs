@@ -6,12 +6,12 @@ namespace MembershipSystem
     public class MembersContext : DbContext
     {
 
-        public MembersContext(DbContextOptions<MembersContext> options) : base (options)
+        public MembersContext(DbContextOptions<MembersContext> options) : base(options)
         { }
 
         public MembersContext() : base() { }
 
         public DbSet<Member> Members { get; set; }
-        
+
     }
 }

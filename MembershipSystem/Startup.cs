@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using MembershipSystem.Controllers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using System;
 
 namespace MembershipSystem
 {
@@ -21,18 +19,33 @@ namespace MembershipSystem
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc();
+            // Add authentication 
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = CustomAuthOptions.DefaultScheme;
+                options.DefaultChallengeScheme = CustomAuthOptions.DefaultScheme;
+            })
+            // Call custom authentication extension method
+            .AddCustomAuth(options =>
+            {
+                // Configure single or multiple passwords for authentication
+                options.AuthKey = "custom auth key";
+            });
+
+            services.AddMvc(options =>
+            {
+                // All endpoints need authentication
+                options.Filters.Add(new AuthorizeFilter(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build()));
+            });
+
             bool UseDummyDb = Configuration.GetValue<bool>("UseDummyInMemory");
-            Func<DbContextOptionsBuilder, DbContextOptionsBuilder> options;
-            if (UseDummyDb) options = o => o.UseInMemoryDatabase("dummy_database");
-            else options = o => o.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
-            services.AddDbContext<MembersContext>(o => options(o));
+            Func<DbContextOptionsBuilder<MembersContext>, DbContextOptionsBuilder<MembersContext>> opt;
+                opt = o => o.UseInMemoryDatabase("dummy_database");
+                MembersController.options = opt(new DbContextOptionsBuilder<MembersContext>()).Options;
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
             if (env.IsDevelopment())
@@ -40,6 +53,8 @@ namespace MembershipSystem
                 app.UseDeveloperExceptionPage();
             }
 
+            // Enable authentication capabilities
+            app.UseAuthentication();
             app.UseMvc();
         }
     }

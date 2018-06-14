@@ -1,6 +1,8 @@
 ﻿using MembershipSystem.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Threading;
 
 namespace MembershipSystem.Controllers
 {
@@ -8,14 +10,13 @@ namespace MembershipSystem.Controllers
     public class MembersController : Controller
     {
 
-        DbContextOptions<MembersContext> options = new DbContextOptionsBuilder<MembersContext>()
-            .UseInMemoryDatabase("dummy_database")
-            .Options;
+        public static DbContextOptions<MembersContext> options = new DbContextOptionsBuilder<MembersContext>()
+            .UseInMemoryDatabase("dummy_database").Options;
 
         private MembersContext GetContext()
         {
             MembersContext mc = new MembersContext(options);
-            if (mc.Members.Find("ABC123")==null)
+            if (mc.Members.Find("ABC123") == null)
             {
                 mc.Members.Add(new Member()
                 {
@@ -33,7 +34,8 @@ namespace MembershipSystem.Controllers
 
         // GET api/members/5
         [HttpGet("{id}")]
-        private IActionResult Get(string id)
+        [AllowAnonymous]
+        public IActionResult Get(string id)
         {
             Member m = GetContext().Members.Find(id);
             if (m == null)
@@ -46,11 +48,17 @@ namespace MembershipSystem.Controllers
             }
         }
 
-        // GET api/5
-        [HttpGet("{id}")]
-        public IActionResult Get(string id, string pin)
+        // GET api/members/5/balance
+        [Route("{id}/balance/")]
+        [HttpGet]
+        public IActionResult GetBalance(string id)
         {
-            if (pin == null) return Get(id);
+            if (Thread.CurrentPrincipal == null
+                || Thread.CurrentPrincipal.Identity.Name != id)
+            {
+                return new UnauthorizedResult();
+            }
+
             Member m = GetContext().Members.Find(id);
             if (m == null)
             {
@@ -58,21 +66,14 @@ namespace MembershipSystem.Controllers
             }
             else
             {
-
-                if (m.PinCode == pin)
-                {
-                    return Ok(new { name = m.Name, balance = m.Balance });
-                }
-                else
-                {
-                    return new UnauthorizedResult();
-                }
+                return Ok(new { name = m.Name, balance = m.Balance });
             }
         }
 
         // PUT api/members/5
         [Route("{id}")]
         [HttpPut]
+        [AllowAnonymous]
         public IActionResult Put(string id, string name, string email, string mobile, string pin)
         {
             if (name == null || email == null || mobile == null || pin == null)
@@ -82,8 +83,10 @@ namespace MembershipSystem.Controllers
             using (MembersContext db = GetContext())
             {
                 Member m = db.Members.Find(id);
-                if (m == null) {
-                    db.Members.Add(new Member() {
+                if (m == null)
+                {
+                    db.Members.Add(new Member()
+                    {
                         Id = id,
                         Name = name,
                         EmailAddress = email,
@@ -93,24 +96,25 @@ namespace MembershipSystem.Controllers
                     });
                     db.SaveChanges();
                     return new StatusCodeResult(201);
-                } else {
+                }
+                else
+                {
                     return new StatusCodeResult(409);
                 }
-                
+
             }
         }
 
         //POST api/members/5
         [Route("{id}")]
         [HttpPost]
-        public IActionResult Post(string id, string pin, int? value)
+        public IActionResult Post(string id, int? value)
         {
-            if (pin == null || value == null)
-            {
-                return new BadRequestObjectResult(new { Function = "POST", Id = id, Pin = pin, Value=value });
-            }
+            string loginId = Thread.CurrentPrincipal.Identity.Name;
+            if (loginId != id) return new UnauthorizedResult();
 
-            using (MembersContext db = GetContext()) {
+            using (MembersContext db = GetContext())
+            {
                 Member m = db.Members.Find(id);
                 if (m == null)
                 {
@@ -118,22 +122,15 @@ namespace MembershipSystem.Controllers
                 }
                 else
                 {
-                    if (m.PinCode == pin)
+                    if (m.Balance + value < 0)
                     {
-                        if (m.Balance + value < 0)
-                        {
-                            return new StatusCodeResult(412);
-                        }
-                        else
-                        {
-                            m.Balance += (int)value;
-                            db.SaveChanges();
-                            return Ok(new { balance = m.Balance });
-                        }
+                        return new StatusCodeResult(412);
                     }
                     else
                     {
-                        return new UnauthorizedResult();
+                        m.Balance += (int)value;
+                        db.SaveChanges();
+                        return Ok(new { balance = m.Balance });
                     }
                 }
             }
