@@ -78,7 +78,7 @@ namespace MembershipSystem.Controllers
         {
             if (name == null || email == null || mobile == null || pin == null)
             {
-                return new BadRequestObjectResult(new { Function = "PUT", Id = id, Name = name, Email = email, Mobile = mobile, Pin = pin });
+                return new BadRequestObjectResult(new { Function = "PUT", Id = id, Name = name, Email = email, Mobile = mobile, Pin = pin==null? null : "****" });
             }
             using (MembersContext db = GetContext())
             {

@@ -1,4 +1,5 @@
 ﻿using MembershipSystem.Controllers;
+using MembershipSystem.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +13,8 @@ namespace MembershipSystem.Authentication
         {
             using (MembersContext mc = MembersController.GetContext())
             {
-                return mc.Members.Any(user => user.Name == username && user.PinCode == password);
+                Member m = mc.Members.Find(username);
+                return m == null ? false: m.PinCode == password ;
             }
 
         }
