@@ -13,7 +13,7 @@ namespace MembershipSystem.Controllers
         public static DbContextOptions<MembersContext> options = new DbContextOptionsBuilder<MembersContext>()
             .UseInMemoryDatabase("dummy_database").Options;
 
-        private MembersContext GetContext()
+        public static MembersContext GetContext()
         {
             MembersContext mc = new MembersContext(options);
             if (mc.Members.Find("ABC123") == null)
